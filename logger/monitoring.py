@@ -109,9 +109,6 @@ class DiskMonitor:
         )
         self.enable_monitoring_logs: bool = config.files_monitoring
 
-        if self.unit not in [u.value for u in Unit]:
-            self.logger.warning(f"Unit '{self.unit}' not supported. Defaulting to 'Go'.")
-
     def convert_unit(self, size: float) -> float:
         """
         Converts a size value from bytes to the specified unit.

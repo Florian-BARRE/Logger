@@ -7,6 +7,7 @@ from logger.log_levels import LogLevels
 from logger.formatter import Formatter
 
 # ====== Color Theme Imports ======
+import logger.colors
 from logger.colors import (
     ClassicColors,
     DarkModeColors,
