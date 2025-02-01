@@ -1,56 +1,112 @@
-from logger.logger_configs import PlacementConfig, LogLevelsConfig, MonitorConfig, LoggerConfig
-from logger.colors import BaseColors, ClassicColors
+# ====== Code Summary ======
+# This LoggerManager class is responsible for managing multiple logger instances
+# with global configurations and specific rules. It ensures dynamic updates to
+# logger configurations, enforces unique logger identifiers, and manages log
+# monitoring settings. The class provides methods for:
+# - Registering new loggers and applying global rules.
+# - Dynamically updating a global logger configuration based on registered loggers.
+# - Ensuring unique logger identifiers.
+# - Managing monitoring settings so that only one logger handles file log monitoring.
 
-from collections import defaultdict
+# ====== Imports ======
+# Standard library imports
+from collections import defaultdict, Counter
+
+# Internal project imports
+from logger.logger_configs import LoggerConfig
 
 
+# ====== LoggerManager Class ======
 class LoggerManager:
+    """
+    LoggerManager handles the registration and management of logger instances,
+    ensuring consistent configurations and enforcing specific rules.
+
+    Class Attributes:
+        enable_files_logs_monitoring_only_for_one_logger (bool):
+            If True, ensures that only one logger instance is allowed to monitor log files.
+            This avoids redundancy and potential performance issues.
+
+        enable_dynamic_config_update (bool):
+            If True, dynamically updates the global logger configuration when a new logger
+            is registered. This ensures that all loggers remain consistent with the most
+            recent configuration changes.
+
+        enable_unique_logger_identifier (bool):
+            If True, ensures that each registered logger has a unique identifier. If multiple
+            loggers have the same identifier, a numerical prefix is added to make them unique.
+
+        global_config (LoggerConfig):
+            A global configuration instance that holds the default settings applied to all loggers if they
+            follow LoggerManager rules. This configuration is updated dynamically based on registered loggers.
+    """
+
+    # Class attributes that define global behaviors for all loggers
     enable_files_logs_monitoring_only_for_one_logger: bool = False
     enable_dynamic_config_update: bool = False
     enable_unique_logger_identifier: bool = False
 
+    # Global-Shared Logger configuration for all loggers which follow LoggerManager rules
     global_config: LoggerConfig = LoggerConfig()
 
-    loggers = []
-
-    __monitoring_logger_is_initialized: bool = False
+    # Private class attributes
+    __loggers = []
+    __monitoring_logger = None
 
     @classmethod
-    def register_logger(cls, logger_instance):
-        cls.loggers.append(logger_instance)
+    def register_logger(cls, logger_instance) -> None:
+        """
+        Registers a new logger instance and applies LoggerManager rules.
 
+        Args:
+            logger_instance: The logger instance to be registered.
+        """
+        cls.__loggers.append(logger_instance)  # Add logger instance to the list
+
+        # If dynamic config update is enabled, update the global config
         if cls.enable_dynamic_config_update:
             cls._dynamic_update_global_config(logger_instance)
 
+        # If logger should follow LoggerManager rules, update its configuration
         if logger_instance.config.follow_logger_manager_rules:
-            # on recurpere tous attributs si y'en a un qui est différent de celui de base on le garde sinon on met celui configuré par le logger manager
+            # Retrieve default logger attributes
             default_logger_config_dict = LoggerConfig().get_attributes()
             new_logger_config_dict = logger_instance.config.get_attributes()
 
+            # Compare each attribute with the default config
             for key, value in new_logger_config_dict.items():
-                # Current logger have same value than the default one, LOGGER MANAGER CONFIG IS APPLIED
+                # If a logger's value matches the default, apply the global LoggerManager config
                 if value != default_logger_config_dict.get(key, value):
                     setattr(logger_instance.config, key, getattr(cls.global_config, key))
 
+        # Ensure unique logger identifiers if the setting is enabled
         if cls.enable_unique_logger_identifier:
             cls._make_logger_identifier_unique()
 
+        # Ensure only one logger is monitoring logs if the setting is enabled
         if cls.enable_files_logs_monitoring_only_for_one_logger:
             cls._unique_monitoring_logger(logger_instance)
 
     @classmethod
     def _dynamic_update_global_config(cls, new_logger_registered):
-        # Ici on essaye de récupère une config global à partir de tous les loggers enregistréq
+        """
+        Updates the global configuration dynamically based on registered loggers.
+        It ensures that PlacementConfig values are set to the largest encountered values.
 
-        # PlacementConfig -> on garde les plus grandes valeurs
+        Args:
+            new_logger_registered: The newly registered logger instance.
+        """
+        # Update the identifier max width by taking the largest value
         cls.global_config.placement_config.identifier_max_width = max(
             cls.global_config.placement_config.identifier_max_width,
             new_logger_registered.config.placement_config.identifier_max_width
         )
+        # Update level max width
         cls.global_config.placement_config.level_max_width = max(
             cls.global_config.placement_config.level_max_width,
             new_logger_registered.config.placement_config.level_max_width
         )
+        # Update filename_lineno max width
         cls.global_config.placement_config.filename_lineno_max_width = max(
             cls.global_config.placement_config.filename_lineno_max_width,
             new_logger_registered.config.placement_config.filename_lineno_max_width
@@ -58,37 +114,36 @@ class LoggerManager:
 
     @classmethod
     def _make_logger_identifier_unique(cls):
-        count_dict = defaultdict(int)
-        occurrences = {
-            logger.config.identifier: sum(
-                1 for l in cls.loggers if l.config.identifier == logger.config.identifier
-            )
-            for logger in cls.loggers
-        }
-        renamed_loggers = []
+        counter = Counter(logger.config.identifier for logger in cls.__loggers)
+        updated_loggers = []
 
-        for logger in cls.loggers:
-            identifier = logger.config.identifier
-            count_dict[identifier] += 1
+        identifier_counts = defaultdict(int)
 
-            if occurrences[identifier] > 1:
-                new_identifier = f"{count_dict[identifier]}_{identifier}"
-                logger.config.identifier = new_identifier  # Mise à jour de l'identifiant
-                # Reset des formatters et handlers pour que les modifications soient prises en compte
+        for logger in cls.__loggers:
+            identifier_counts[logger.config.identifier] += 1
+            if counter[logger.config.identifier] > 1:
+                new_identifier = f"{identifier_counts[logger.config.identifier]}_{logger.config.identifier}"
+                logger.config.identifier = new_identifier
+                logger.update_print_handler_formatter(identifier=new_identifier)
+                logger.update_file_handler_formatter(identifier=new_identifier)
 
-                logger.set_print_handler(identifier=new_identifier)
-                logger.set_file_handler(identifier=new_identifier)
+            updated_loggers.append(logger)
 
-            renamed_loggers.append(logger)
-
-        cls.loggers = renamed_loggers
+        cls.__loggers = updated_loggers
 
     @classmethod
     def _unique_monitoring_logger(cls, new_logger_registered):
+        """
+        Ensures that only one logger instance has monitoring enabled.
+        If another logger has already been set for monitoring, disable monitoring for the new one.
+
+        Args:
+            new_logger_registered: The newly registered logger instance.
+        """
         if new_logger_registered.config.monitor_config.is_monitoring_enabled():
-            # desactive le monitoring pour tous les autres loggers
-            if cls.__monitoring_logger_is_initialized:
+            # If a monitoring logger is already initialized, disable monitoring for the new logger
+            if cls.__monitoring_logger:
                 new_logger_registered.config.monitor_config.display_monitoring = False
                 new_logger_registered.config.monitor_config.files_monitoring = False
             else:
-                cls.__monitoring_logger_is_initialized = True
+                cls.__monitoring_logger = new_logger_registered

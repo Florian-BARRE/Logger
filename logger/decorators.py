@@ -11,7 +11,6 @@ import time
 from logger.logger import Logger
 from logger.log_levels import LogLevels
 from logger.tools import get_function_metadata, get_logger_from_decorator_param
-# ====== Tools functions ======
 
 
 # ====== Decorators ======

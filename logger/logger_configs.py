@@ -2,8 +2,8 @@
 # Standard library imports
 import os
 import datetime
-from dataclasses import dataclass, field, fields, asdict
 from typing import Dict, Any, Type, TypeVar
+from dataclasses import dataclass, field, fields, asdict
 
 # Internal project imports
 from logger.colors import BaseColors, ClassicColors
@@ -28,8 +28,10 @@ class BaseConfig:
         Automatically handles missing values by using default values.
         """
         default_instance = cls()
-        updated_data = {field.name: data.get(field.name, getattr(default_instance, field.name)) for field in
-                        fields(cls)}
+        updated_data = {
+            f.name: data.get(f.name, getattr(default_instance, f.name))
+            for f in fields(cls)
+        }
         return cls(**updated_data)
 
     @classmethod

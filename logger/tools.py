@@ -91,7 +91,7 @@ def get_logger_from_decorator_param(param_logger: Union["Logger", str, Callable]
     if isinstance(param_logger, Logger):
         return param_logger
     if isinstance(param_logger, str):
-        return Logger(identifier=param_logger)
+        return Logger(identifier=param_logger, follow_logger_manager_rules=True)
     if param_logger is not None:
         instance = args[0]  # First argument of a bound method is typically `self`
         return param_logger(instance)

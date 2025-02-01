@@ -1,6 +1,6 @@
 # ====== Imports ======
 # Standard library imports
-from colorama import Fore, Back, Style
+from colorama import Style
 
 # Internal project imports
 from logger.log_levels import LogLevels
