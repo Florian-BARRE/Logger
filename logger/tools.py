@@ -38,7 +38,7 @@ def center_and_limit(text: str, width: int, trailing_dots: int = 2):
     )
 
 
-def get_function_metadata(func: Callable, args, kwargs, max_params_length: int = 50) -> str:
+def get_function_metadata(func: Callable, args, kwargs, max_params_length: int = 15) -> str:
     """
     Generate a concise string containing function/method metadata, including module, class (if applicable),
     function name, and parameter values. Optionally truncates long argument values.
@@ -67,9 +67,9 @@ def get_function_metadata(func: Callable, args, kwargs, max_params_length: int =
 
     # Don't truncate if max_params_length is negative
     if max_params_length < 0:
-        params_info = ", ".join(f"{k}={truncate(v)}" for k, v in bound_args.arguments.items())
-    else:
         params_info = ", ".join(f"{k}={v}" for k, v in bound_args.arguments.items())
+    else:
+        params_info = ", ".join(f"{k}={truncate(v)}" for k, v in bound_args.arguments.items())
 
     return f"[{module_name}] {class_name + '.' if class_name else ''}{func.__name__}({params_info})"
 

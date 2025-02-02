@@ -123,8 +123,8 @@ def fonction_a_suivre():
     return "Donnée importante"
 ```
 
-## 7. Conclusion
-Le module **Logger** est un outil puissant pour structurer les logs d’une application Python en assurant leur lisibilité, stockage optimisé et supervision efficace.
+### Auteur
 
-N’hésitez pas à contribuer ou proposer des améliorations ! 🚀
-
+Projet créé et maintenu par **Florian BARRE**.  
+Pour toute question ou contribution, n'hésitez pas à me contacter.
+[Mon Site](https://florianbarre.fr/) | [Mon LinkedIn](www.linkedin.com/in/barre-florian) | [Mon GitHub](https://github.com/Florian-BARRE)

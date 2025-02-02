@@ -150,7 +150,7 @@ class LoggerConfig:
     def _initialize_file_path(self):
         if not os.path.isdir(self.path):
             os.mkdir(self.path)
-        self.path = os.path.join(self.path, f"{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
+        self.full_path = os.path.join(self.path, f"{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
 
     def __post_init__(self):
         if self.log_levels_config.write_to_file:

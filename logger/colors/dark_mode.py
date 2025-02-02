@@ -12,16 +12,16 @@ class DarkModeColors(BaseColors):
     Dark mode theme with high contrast for readability.
     """
     LogLevelsColorsDict = {
-        LogLevels.DEBUG: Style.DIM + Fore.LIGHTBLACK_EX,
-        LogLevels.INFO: Style.RESET_ALL + Fore.CYAN,
-        LogLevels.WARNING: Style.BRIGHT + Fore.LIGHTYELLOW_EX,
-        LogLevels.ERROR: Style.BRIGHT + Fore.LIGHTRED_EX,
-        LogLevels.CRITICAL: Style.BRIGHT + Fore.RED + Back.BLACK,
-        LogLevels.FATAL: Style.BRIGHT + Back.RED + Fore.WHITE + BaseColors.BRIGHT,
+        LogLevels.DEBUG: Style.RESET_ALL + Fore.LIGHTBLACK_EX,
+        LogLevels.INFO: Style.RESET_ALL + Fore.CYAN + BaseColors.DIM,
+        LogLevels.WARNING: Style.RESET_ALL + Fore.YELLOW,
+        LogLevels.ERROR: Style.RESET_ALL + Fore.LIGHTRED_EX + BaseColors.BRIGHT,
+        LogLevels.CRITICAL: Style.RESET_ALL + Back.LIGHTRED_EX + BaseColors.BRIGHT,
+        LogLevels.FATAL: Style.RESET_ALL + Back.RED + Fore.BLACK + BaseColors.BRIGHT,
     }
 
-    DATE = Style.DIM + Fore.LIGHTWHITE_EX
-    IDENTIFIER = Style.BRIGHT + Fore.LIGHTBLUE_EX
-    FILENAME = Style.BRIGHT + Fore.LIGHTCYAN_EX
-    LINENO = Style.BRIGHT + Fore.LIGHTMAGENTA_EX
-    MESSAGE = Style.BRIGHT + Fore.WHITE
+    DATE = Style.RESET_ALL + Fore.LIGHTYELLOW_EX
+    IDENTIFIER = Style.RESET_ALL + Style.BRIGHT + Fore.GREEN
+    FILENAME = Style.RESET_ALL + Fore.LIGHTBLUE_EX
+    LINENO = Style.RESET_ALL + Fore.MAGENTA
+    MESSAGE = ""

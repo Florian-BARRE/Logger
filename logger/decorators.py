@@ -64,7 +64,7 @@ def log(param_logger: Logger | str | Callable = None, log_level: LogLevels = Log
             if logger_instance is None:
                 raise ValueError("[log] A logger must be specified via param_logger.")
 
-            logger_instance.log(f"{get_function_metadata(func, args, kwargs)} called", log_level)
+            logger_instance.log(msg=f"{get_function_metadata(func, args, kwargs)} called", level=log_level)
             return func(*args, **kwargs)
 
         return wrapper

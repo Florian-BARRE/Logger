@@ -167,13 +167,13 @@ class Logger:
         """Sets up logging handlers for console and file output."""
         if self.config.log_levels_config.print_log:
             self._set_handler(
-                logging.StreamHandler(sys.stdout),
+                logging.StreamHandler(stream=sys.stdout),
                 self.config.log_levels_config.print_log_level,
                 self.config.colors
             )
         if self.config.log_levels_config.write_to_file:
             self._set_handler(
-                logging.FileHandler(self.config.path),
+                logging.FileHandler(self.config.full_path),
                 self.config.log_levels_config.file_log_level,
                 colors=None
             )
@@ -189,7 +189,7 @@ class Logger:
         """
         formatter = Formatter(
             identifier=self.config.identifier,
-            identifier_max_width=self.config.placement_config.placement_improvement,
+            identifier_max_width=self.config.placement_config.identifier_max_width,
             filename_lineno_max_width=self.config.placement_config.filename_lineno_max_width,
             level_max_width=self.config.placement_config.level_max_width,
             colors=colors,
@@ -206,7 +206,8 @@ class Logger:
             identifier_max_width: Optional[int] = None,
             filename_lineno_max_width: Optional[int] = None,
             level_max_width: Optional[int] = None,
-            colors: Optional[type[BaseColors]] = None
+            colors: Optional[type[BaseColors]] = None,
+            **kwargs
     ):
         """
         Updates the formatter of a specified handler type dynamically.
@@ -257,7 +258,8 @@ class Logger:
             identifier_max_width: Optional[int] = None,
             filename_lineno_max_width: Optional[int] = None,
             level_max_width: Optional[int] = None,
-            colors: Optional[type[BaseColors]] = None
+            colors: Optional[type[BaseColors]] = None,
+            **kwargs
     ):
         """
         Updates the formatter of the StreamHandler (console logging).
@@ -283,7 +285,8 @@ class Logger:
             identifier: Optional[str] = None,
             identifier_max_width: Optional[int] = None,
             filename_lineno_max_width: Optional[int] = None,
-            level_max_width: Optional[int] = None
+            level_max_width: Optional[int] = None,
+            **kwargs
     ):
         """
         Updates the formatter of the FileHandler (file logging).
@@ -305,12 +308,13 @@ class Logger:
     # ====== Logging Methods ======
     def log(self, msg: str, level: LogLevels) -> None:
         """ Logs a message at the specified log level. """
-        self.log_level_to_logger_function.get(
-            level,
-            lambda bind_msg, stack_level: self.logger.warning(
-                msg=f"Invalid log level [log message: {bind_msg}]", stacklevel=stack_level
-            ),
-        )(msg, 2)
+        log_func = self.log_level_to_logger_function.get(level)
+        if log_func is None:
+            self.logger.warning(
+                f"Invalid log level [log message: {msg}]", stacklevel=2
+            )
+        else:
+            log_func(msg, stacklevel=2)
 
     def fatal(self, msg: str) -> None:
         """ Logs a fatal message. """

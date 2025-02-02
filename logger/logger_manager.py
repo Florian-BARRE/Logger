@@ -11,6 +11,7 @@
 # ====== Imports ======
 # Standard library imports
 from collections import defaultdict, Counter
+from dataclasses import asdict
 
 # Internal project imports
 from logger.logger_configs import LoggerConfig
@@ -66,18 +67,11 @@ class LoggerManager:
         # If dynamic config update is enabled, update the global config
         if cls.enable_dynamic_config_update:
             cls._dynamic_update_global_config(logger_instance)
+            cls._propagate_placement_config_to_loggers()
 
         # If logger should follow LoggerManager rules, update its configuration
         if logger_instance.config.follow_logger_manager_rules:
-            # Retrieve default logger attributes
-            default_logger_config_dict = LoggerConfig().get_attributes()
-            new_logger_config_dict = logger_instance.config.get_attributes()
-
-            # Compare each attribute with the default config
-            for key, value in new_logger_config_dict.items():
-                # If a logger's value matches the default, apply the global LoggerManager config
-                if value != default_logger_config_dict.get(key, value):
-                    setattr(logger_instance.config, key, getattr(cls.global_config, key))
+            cls._combine_logger_config_with_global(logger_instance)
 
         # Ensure unique logger identifiers if the setting is enabled
         if cls.enable_unique_logger_identifier:
@@ -86,6 +80,44 @@ class LoggerManager:
         # Ensure only one logger is monitoring logs if the setting is enabled
         if cls.enable_files_logs_monitoring_only_for_one_logger:
             cls._unique_monitoring_logger(logger_instance)
+
+    @classmethod
+    def _combine_logger_config_with_global(cls, logger_instance):
+        """
+        Combines the logger's configuration with the global configuration.
+        """
+        # Retrieve default logger attributes
+        default_logger_config_dict = LoggerConfig().get_attributes()
+        new_logger_config_dict = logger_instance.config.get_attributes()
+        global_config_dict = cls.global_config.get_attributes()
+
+        combined_config_dict = {}
+
+        # The placement config is not compared with the default config because
+        # it is automatically adjusted if logger follows LoggerManager rules
+        placement_config_dict_keys = asdict(cls.global_config.placement_config).keys()
+
+        # Compare each attribute with the default config
+        for key, value in new_logger_config_dict.items():
+            # If a logger's value matches the default, apply the global LoggerManager config
+            if value == default_logger_config_dict.get(key, value) or key in placement_config_dict_keys:
+                combined_config_dict[key] = global_config_dict.get(key, value)
+            else:
+                combined_config_dict[key] = value
+
+        logger_instance.config = LoggerConfig.from_dict(combined_config_dict)
+
+    @classmethod
+    def _propagate_placement_config_to_loggers(cls):
+        """
+        Updates the placement configuration for all loggers based on the global configuration.
+        Only for loggers that follow LoggerManager rules.
+        """
+        for logger_instance in cls.__loggers:
+            if logger_instance.config.follow_logger_manager_rules:
+                placement_config = asdict(cls.global_config.placement_config)
+                logger_instance.update_print_handler_formatter(**placement_config)
+                logger_instance.update_file_handler_formatter(**placement_config)
 
     @classmethod
     def _dynamic_update_global_config(cls, new_logger_registered):
